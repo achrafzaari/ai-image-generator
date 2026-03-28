@@ -17,19 +17,13 @@ export default async function handler(req, res) {
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [
-            {
-              parts: [{ text: prompt }]
-            }
-          ],
-          generationConfig: {
-            responseModalities: ['TEXT', 'IMAGE']
-          }
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
         })
       }
     );
@@ -41,8 +35,6 @@ export default async function handler(req, res) {
     }
 
     const data = await response.json();
-
-    // Find image part in response
     const parts = data?.candidates?.[0]?.content?.parts || [];
     const imagePart = parts.find(p => p.inlineData);
 
