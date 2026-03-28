@@ -3,13 +3,13 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { prompt, aspectRatio = '1:1' } = req.body;
+  const { prompt } = req.body;
 
   if (!prompt) {
     return res.status(400).json({ error: 'Prompt is required' });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
+  const apiKey = process.env.HF_TOKEN;
 
   if (!apiKey) {
     return res.status(500).json({ error: 'API key not configured' });
@@ -17,33 +17,31 @@ export default async function handler(req, res) {
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${apiKey}`,
+      'https://api-inference.huggingface.co/models/black-forest-labs/FLUX.1-dev',
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { responseModalities: ['TEXT', 'IMAGE'] }
+          inputs: prompt,
+          parameters: {
+            num_inference_steps: 30,
+            guidance_scale: 7.5
+          }
         })
       }
     );
 
     if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      const msg = err?.error?.message || `Error ${response.status}`;
-      return res.status(response.status).json({ error: msg });
+      const errText = await response.text().catch(() => '');
+      return res.status(response.status).json({ error: errText || `Error ${response.status}` });
     }
 
-    const data = await response.json();
-    const parts = data?.candidates?.[0]?.content?.parts || [];
-    const imagePart = parts.find(p => p.inlineData);
-
-    if (!imagePart) {
-      return res.status(500).json({ error: 'No image data received' });
-    }
-
-    const { mimeType, data: b64 } = imagePart.inlineData;
-    return res.status(200).json({ image: `data:${mimeType};base64,${b64}` });
+    const buffer = await response.arrayBuffer();
+    const b64 = Buffer.from(buffer).toString('base64');
+    return res.status(200).json({ image: `data:image/jpeg;base64,${b64}` });
 
   } catch (err) {
     return res.status(500).json({ error: err.message || 'Internal server error' });
