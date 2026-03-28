@@ -17,17 +17,18 @@ export default async function handler(req, res) {
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          instances: [{ prompt }],
-          parameters: {
-            sampleCount: 1,
-            aspectRatio,
-            safetyFilterLevel: 'block_some',
-            personGeneration: 'allow_adult'
+          contents: [
+            {
+              parts: [{ text: prompt }]
+            }
+          ],
+          generationConfig: {
+            responseModalities: ['TEXT', 'IMAGE']
           }
         })
       }
@@ -40,13 +41,17 @@ export default async function handler(req, res) {
     }
 
     const data = await response.json();
-    const b64 = data?.predictions?.[0]?.bytesBase64Encoded;
 
-    if (!b64) {
+    // Find image part in response
+    const parts = data?.candidates?.[0]?.content?.parts || [];
+    const imagePart = parts.find(p => p.inlineData);
+
+    if (!imagePart) {
       return res.status(500).json({ error: 'No image data received' });
     }
 
-    return res.status(200).json({ image: `data:image/png;base64,${b64}` });
+    const { mimeType, data: b64 } = imagePart.inlineData;
+    return res.status(200).json({ image: `data:${mimeType};base64,${b64}` });
 
   } catch (err) {
     return res.status(500).json({ error: err.message || 'Internal server error' });
