@@ -95,9 +95,9 @@
         <div class="setting-group">
           <label>🤖 النموذج</label>
           <select id="model">
-            <option value="stabilityai/stable-diffusion-2-1">📸 Stable Diffusion 2.1</option>
-            <option value="runwayml/stable-diffusion-v1-5">🎨 SD v1.5</option>
+            <option value="black-forest-labs/FLUX.1-schnell">⚡ FLUX Schnell (سريع)</option>
             <option value="stabilityai/stable-diffusion-xl-base-1.0">⭐ SDXL</option>
+            <option value="stabilityai/stable-diffusion-2-1">📸 SD 2.1</option>
           </select>
         </div>
         <div class="setting-group">
@@ -157,20 +157,18 @@
 
       try {
         const promises = Array.from({ length: count }, () =>
-          fetch(`https://router.huggingface.co/hf-inference/models/${model}`, {
+          fetch('https://router.huggingface.co/hf-inference/models/' + model, {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json'
+              'Authorization': 'Bearer ' + token,
+              'Content-Type': 'application/json',
+              'x-wait-for-model': 'true'
             },
-            body: JSON.stringify({
-              inputs: enhancedPrompt,
-              parameters: { num_inference_steps: 30, guidance_scale: 7.5, negative_prompt: negativePrompt }
-            })
+            body: JSON.stringify({ inputs: enhancedPrompt })
           }).then(async r => {
             if (!r.ok) {
               const txt = await r.text();
-              throw new Error(txt || `Error ${r.status}`);
+              throw new Error(txt || 'Error ' + r.status);
             }
             const blob = await r.blob();
             return { src: URL.createObjectURL(blob), prompt };
