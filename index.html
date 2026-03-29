@@ -228,7 +228,7 @@
 
       try {
         const promises = Array.from({ length: count }, (_, i) => {
-          const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(fullPrompt)}?model=${model}&width=${width}&height=${height}&seed=${seed + i}&nologo=true&enhance=true`;
+          const url = `https://gen.pollinations.ai/image/${encodeURIComponent(fullPrompt)}?model=${model}&width=${width}&height=${height}&seed=${seed + i}&nologo=true`;
           return loadImage(url, prompt);
         });
 
